@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'frontend/**'
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -22,7 +23,7 @@ jobs:
       - run: npm ci
       - run: npx @cloudflare/next-on-pages@1
       - name: Deploy to Cloudflare Pages
-        run: npx wrangler pages deploy .vercel/output/static --project-name=tracker-os
+        run: npx wrangler pages deploy .vercel/output/static --project-name=tracker-os --branch=main
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
