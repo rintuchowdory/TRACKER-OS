@@ -2,31 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutGrid,
-  Send,
-  CheckCircle2,
-  Wallet,
-  BookOpen,
-  Heart,
-  PenSquare,
-  Settings,
-  Sun,
-  Moon,
-  LogOut,
-} from "lucide-react";
+import { Sun, Moon, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
-
-const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
-  { href: "/dashboard/outreach", label: "Outreach", icon: Send },
-  { href: "/dashboard/habits", label: "Habits", icon: CheckCircle2 },
-  { href: "/dashboard/budget", label: "Budget", icon: Wallet },
-  { href: "/dashboard/reading", label: "Reading", icon: BookOpen },
-  { href: "/dashboard/gratitude", label: "Gratitude", icon: Heart },
-  { href: "/dashboard/content", label: "Content", icon: PenSquare },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings },
-];
+import { NAV_ITEMS } from "@/lib/sections";
 
 export function Sidebar() {
   const pathname = usePathname();
