@@ -3,43 +3,28 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Sun, Moon, LogOut } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { NAV_ITEMS } from "@/lib/sections";
-
-function readStoredTheme(): string | null {
-  try {
-    return window.localStorage.getItem("theme");
-  } catch (err) {
-    console.error("Could not read the stored theme", err);
-    return null;
-  }
-}
-
-function storeTheme(theme: string) {
-  try {
-    window.localStorage.setItem("theme", theme);
-  } catch (err) {
-    console.error("Could not persist the theme preference", err);
-  }
-}
+import {
+  applyTheme,
+  getServerTheme,
+  getTheme,
+  setTheme,
+  subscribeTheme,
+} from "@/lib/theme";
 
 export function Sidebar() {
   const pathname = usePathname();
-  const [isDark, setIsDark] = useState(true);
+  const theme = useSyncExternalStore(subscribeTheme, getTheme, getServerTheme);
+  const isDark = theme === "dark";
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
-    const stored = readStoredTheme();
-    const dark = stored ? stored === "dark" : true;
-    setIsDark(dark);
-    document.documentElement.classList.toggle("dark", dark);
-  }, []);
+    applyTheme(theme);
+  }, [theme]);
 
   function toggleTheme() {
-    const next = !isDark;
-    setIsDark(next);
-    document.documentElement.classList.toggle("dark", next);
-    storeTheme(next ? "dark" : "light");
+    setTheme(isDark ? "light" : "dark");
   }
 
   function handleLogout() {

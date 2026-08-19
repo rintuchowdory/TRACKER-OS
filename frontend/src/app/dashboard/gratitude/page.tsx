@@ -1,10 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Heart, Sparkles, CalendarDays } from "lucide-react";
-import { api, apiErrorMessage, type GratitudeEntry } from "@/lib/api";
+import { type GratitudeEntry } from "@/lib/api";
 import { Card, CardHeading, PageHeader, PageShell } from "@/components/layout";
 import { SECTIONS } from "@/lib/sections";
+import {
+  EMPTY_ITEMS,
+  canSave as canSaveItems,
+  loadJournal,
+  saveToday,
+} from "@/lib/gratitude";
 
 const PLACEHOLDERS = [
   "A productive morning...",
@@ -13,7 +19,7 @@ const PLACEHOLDERS = [
 ];
 
 export default function GratitudePage() {
-  const [items, setItems] = useState(["", "", ""]);
+  const [items, setItems] = useState(EMPTY_ITEMS);
   const [entries, setEntries] = useState<GratitudeEntry[]>([]);
   const [loadingEntries, setLoadingEntries] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -21,65 +27,47 @@ export default function GratitudePage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
-  async function loadEntries() {
-    setLoadingEntries(true);
-    setLoadError(null);
-    try {
-      const [list, today] = await Promise.all([
-        api.gratitude.list(),
-        api.gratitude.today(),
-      ]);
-      setEntries(list);
-      if (today) {
-        setItems([today.item_1, today.item_2, today.item_3]);
-      }
-    } catch (err) {
-      console.error("Failed to load gratitude journal", err);
-      setLoadError(
-        apiErrorMessage(
-          err,
-          (status, detail) => `Couldn't load journal (${status}): ${detail}`,
-          "Couldn't reach the backend. Check NEXT_PUBLIC_API_URL."
-        )
-      );
-    } finally {
+  const apply = useCallback(
+    (result: Awaited<ReturnType<typeof loadJournal>>, keepItems: boolean) => {
       setLoadingEntries(false);
-    }
-  }
+      if (result.ok) {
+        setLoadError(null);
+        setEntries(result.data.entries);
+        if (!keepItems) setItems(result.data.items);
+      } else {
+        setLoadError(result.error);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
-    void loadEntries();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    let cancelled = false;
+    loadJournal().then((result) => {
+      if (!cancelled) apply(result, false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [apply]);
 
   async function handleSave() {
     setSaving(true);
     setSaveError(null);
     setSaved(false);
-    try {
-      await api.gratitude.save({
-        item_1: items[0],
-        item_2: items[1],
-        item_3: items[2],
-      });
+
+    const result = await saveToday(items);
+    if (result.ok) {
       setSaved(true);
-      await loadEntries();
+      apply(await loadJournal(), true);
       setTimeout(() => setSaved(false), 2500);
-    } catch (err) {
-      console.error("Failed to save gratitude entry", err);
-      setSaveError(
-        apiErrorMessage(
-          err,
-          (status, detail) => `Save failed (${status}): ${detail}`,
-          "Save failed. Check your connection to the backend."
-        )
-      );
-    } finally {
-      setSaving(false);
+    } else {
+      setSaveError(result.error);
     }
+    setSaving(false);
   }
 
-  const canSave = items.some((i) => i.trim().length > 0) && !saving;
+  const canSave = canSaveItems(items, saving);
 
   return (
     <PageShell>
