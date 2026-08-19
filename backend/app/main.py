@@ -6,7 +6,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database import Base, engine
 from app.routers import gratitude
 
-DEFAULT_CORS_ORIGINS = "http://localhost:3000,https://rintu-tracker-os.pages.dev"
+DEFAULT_CORS_ORIGINS = (
+    "http://localhost:3000,https://tracker-os.pages.dev,https://rintu-tracker-os.pages.dev"
+)
 
 docs_enabled = os.environ.get("ENABLE_DOCS", "").lower() in {"1", "true", "yes"}
 

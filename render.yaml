@@ -16,7 +16,7 @@ services:
           name: tracker-os-db
           property: connectionString
       - key: CORS_ORIGINS
-        value: https://rintu-tracker-os.pages.dev
+        value: https://tracker-os.pages.dev,https://rintu-tracker-os.pages.dev
 
 databases:
   - name: tracker-os-db
