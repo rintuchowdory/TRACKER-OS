@@ -8,6 +8,18 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Turns an unknown thrown value into a user-facing message, distinguishing
+ * failed HTTP responses from a backend that could not be reached at all.
+ */
+export function apiErrorMessage(
+  err: unknown,
+  onStatus: (status: number) => string,
+  onUnreachable: string
+): string {
+  return err instanceof ApiError ? onStatus(err.status) : onUnreachable;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
