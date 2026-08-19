@@ -28,13 +28,30 @@ const NAV_ITEMS = [
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
+function readStoredTheme(): string | null {
+  try {
+    return window.localStorage.getItem("theme");
+  } catch (err) {
+    console.error("Could not read the stored theme", err);
+    return null;
+  }
+}
+
+function storeTheme(theme: string) {
+  try {
+    window.localStorage.setItem("theme", theme);
+  } catch (err) {
+    console.error("Could not persist the theme preference", err);
+  }
+}
+
 export function Sidebar() {
   const pathname = usePathname();
   const [isDark, setIsDark] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem("theme");
+    const stored = readStoredTheme();
     const dark = stored ? stored === "dark" : true;
     setIsDark(dark);
     document.documentElement.classList.toggle("dark", dark);
@@ -44,7 +61,7 @@ export function Sidebar() {
     const next = !isDark;
     setIsDark(next);
     document.documentElement.classList.toggle("dark", next);
-    window.localStorage.setItem("theme", next ? "dark" : "light");
+    storeTheme(next ? "dark" : "light");
   }
 
   function handleLogout() {

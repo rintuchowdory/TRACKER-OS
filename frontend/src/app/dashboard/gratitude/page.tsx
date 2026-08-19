@@ -2,13 +2,23 @@
 
 import { useEffect, useState } from "react";
 import { Heart, Sparkles, CalendarDays } from "lucide-react";
-import { api, ApiError, type GratitudeEntry } from "@/lib/api";
+import { api, ApiError, NetworkError, type GratitudeEntry } from "@/lib/api";
 
 const PLACEHOLDERS = [
   "A productive morning...",
   "My health...",
   "Learning something new...",
 ];
+
+function describeError(err: unknown, prefix: string): string {
+  if (err instanceof ApiError) {
+    return `${prefix} (${err.status}): ${err.message}`;
+  }
+  if (err instanceof NetworkError) {
+    return `${prefix}: couldn't reach the backend. Check NEXT_PUBLIC_API_URL.`;
+  }
+  return `${prefix}: ${err instanceof Error ? err.message : "unexpected error"}`;
+}
 
 export default function GratitudePage() {
   const [items, setItems] = useState(["", "", ""]);
@@ -32,18 +42,15 @@ export default function GratitudePage() {
         setItems([today.item_1, today.item_2, today.item_3]);
       }
     } catch (err) {
-      setLoadError(
-        err instanceof ApiError
-          ? `Couldn't load journal (${err.status}). Is the backend running?`
-          : "Couldn't reach the backend. Check NEXT_PUBLIC_API_URL."
-      );
+      console.error("Failed to load gratitude journal", err);
+      setLoadError(describeError(err, "Couldn't load journal"));
     } finally {
       setLoadingEntries(false);
     }
   }
 
   useEffect(() => {
-    loadEntries();
+    void loadEntries();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -61,11 +68,8 @@ export default function GratitudePage() {
       await loadEntries();
       setTimeout(() => setSaved(false), 2500);
     } catch (err) {
-      setSaveError(
-        err instanceof ApiError
-          ? `Save failed (${err.status}).`
-          : "Save failed. Check your connection to the backend."
-      );
+      console.error("Failed to save gratitude entry", err);
+      setSaveError(describeError(err, "Save failed"));
     } finally {
       setSaving(false);
     }
