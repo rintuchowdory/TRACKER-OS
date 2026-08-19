@@ -15,6 +15,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/gratitude", tags=["gratitude"])
 
 
+def entry_for_date(db: Session, day: dt.date) -> GratitudeEntry | None:
+    stmt = select(GratitudeEntry).where(GratitudeEntry.entry_date == day)
+    return db.scalars(stmt).first()
+
+
 @router.get("", response_model=list[GratitudeOut])
 def list_entries(db: Session = Depends(get_db)):
     stmt = select(GratitudeEntry).order_by(GratitudeEntry.entry_date.desc()).limit(90)
@@ -23,16 +28,13 @@ def list_entries(db: Session = Depends(get_db)):
 
 @router.get("/today", response_model=GratitudeOut | None)
 def get_today(db: Session = Depends(get_db)):
-    today = dt.date.today()
-    stmt = select(GratitudeEntry).where(GratitudeEntry.entry_date == today)
-    return db.scalars(stmt).first()
+    return entry_for_date(db, dt.date.today())
 
 
 @router.post("", response_model=GratitudeOut)
 def save_today(payload: GratitudeIn, db: Session = Depends(get_db)):
     today = dt.date.today()
-    stmt = select(GratitudeEntry).where(GratitudeEntry.entry_date == today)
-    entry = db.scalars(stmt).first()
+    entry = entry_for_date(db, today)
 
     if entry is None:
         entry = GratitudeEntry(entry_date=today)

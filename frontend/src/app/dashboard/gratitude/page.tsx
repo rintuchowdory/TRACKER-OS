@@ -2,23 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { Heart, Sparkles, CalendarDays } from "lucide-react";
-import { api, ApiError, NetworkError, type GratitudeEntry } from "@/lib/api";
+import { api, apiErrorMessage, type GratitudeEntry } from "@/lib/api";
+import { Card, CardHeading, PageHeader, PageShell } from "@/components/layout";
+import { SECTIONS } from "@/lib/sections";
 
 const PLACEHOLDERS = [
   "A productive morning...",
   "My health...",
   "Learning something new...",
 ];
-
-function describeError(err: unknown, prefix: string): string {
-  if (err instanceof ApiError) {
-    return `${prefix} (${err.status}): ${err.message}`;
-  }
-  if (err instanceof NetworkError) {
-    return `${prefix}: couldn't reach the backend. Check NEXT_PUBLIC_API_URL.`;
-  }
-  return `${prefix}: ${err instanceof Error ? err.message : "unexpected error"}`;
-}
 
 export default function GratitudePage() {
   const [items, setItems] = useState(["", "", ""]);
@@ -43,7 +35,13 @@ export default function GratitudePage() {
       }
     } catch (err) {
       console.error("Failed to load gratitude journal", err);
-      setLoadError(describeError(err, "Couldn't load journal"));
+      setLoadError(
+        apiErrorMessage(
+          err,
+          (status, detail) => `Couldn't load journal (${status}): ${detail}`,
+          "Couldn't reach the backend. Check NEXT_PUBLIC_API_URL."
+        )
+      );
     } finally {
       setLoadingEntries(false);
     }
@@ -69,7 +67,13 @@ export default function GratitudePage() {
       setTimeout(() => setSaved(false), 2500);
     } catch (err) {
       console.error("Failed to save gratitude entry", err);
-      setSaveError(describeError(err, "Save failed"));
+      setSaveError(
+        apiErrorMessage(
+          err,
+          (status, detail) => `Save failed (${status}): ${detail}`,
+          "Save failed. Check your connection to the backend."
+        )
+      );
     } finally {
       setSaving(false);
     }
@@ -78,24 +82,17 @@ export default function GratitudePage() {
   const canSave = items.some((i) => i.trim().length > 0) && !saving;
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col gap-6">
-      <div className="rounded-xl border border-surface-border bg-surface p-6">
-        <h1 className="flex items-center gap-2 text-xl font-semibold text-accent">
-          <Heart size={20} className="fill-accent" />
-          Gratitude Journal
-        </h1>
-        <p className="mt-1 text-sm text-muted">
-          Write 3 things you are grateful for today to keep a positive
-          mindset.
-        </p>
-      </div>
+    <PageShell>
+      <PageHeader
+        icon={SECTIONS.gratitude.icon}
+        title="Gratitude Journal"
+        description="Write 3 things you are grateful for today to keep a positive mindset."
+        accent
+      />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr]">
-        <div className="rounded-xl border border-surface-border bg-surface p-6">
-          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold">
-            <Sparkles size={16} className="text-accent" />
-            Today&apos;s Gratitude
-          </h2>
+        <Card>
+          <CardHeading icon={Sparkles}>Today&apos;s Gratitude</CardHeading>
 
           <div className="space-y-4">
             {items.map((value, i) => (
@@ -132,13 +129,10 @@ export default function GratitudePage() {
           {saveError && (
             <p className="mt-2 text-xs text-red-400">{saveError}</p>
           )}
-        </div>
+        </Card>
 
-        <div className="rounded-xl border border-surface-border bg-surface p-6">
-          <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold">
-            <CalendarDays size={16} className="text-accent" />
-            Past Entries
-          </h2>
+        <Card>
+          <CardHeading icon={CalendarDays}>Past Entries</CardHeading>
 
           {loadingEntries && (
             <div className="rounded-lg border border-surface-border bg-background px-4 py-6 text-center text-xs uppercase tracking-wide text-muted">
@@ -181,8 +175,8 @@ export default function GratitudePage() {
               ))}
             </ul>
           )}
-        </div>
+        </Card>
       </div>
-    </div>
+    </PageShell>
   );
 }

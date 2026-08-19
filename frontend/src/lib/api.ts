@@ -30,6 +30,18 @@ function errorMessage(status: number, body: string): string {
   return body.trim() || `Request failed (${status})`;
 }
 
+/**
+ * Turns an unknown thrown value into a user-facing message, distinguishing
+ * failed HTTP responses from a backend that could not be reached at all.
+ */
+export function apiErrorMessage(
+  err: unknown,
+  onStatus: (status: number, detail: string) => string,
+  onUnreachable: string
+): string {
+  return err instanceof ApiError ? onStatus(err.status, err.message) : onUnreachable;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {
