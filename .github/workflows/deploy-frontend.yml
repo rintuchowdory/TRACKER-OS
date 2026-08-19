@@ -16,7 +16,7 @@ jobs:
     env:
       NPM_CONFIG_LEGACY_PEER_DEPS: "true"
       NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
-      PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT || 'tracker-os' }}
+      PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT || 'rintu-tracker-os' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
