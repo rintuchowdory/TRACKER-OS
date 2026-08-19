@@ -3,26 +3,28 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Sun, Moon, LogOut } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { NAV_ITEMS } from "@/lib/sections";
+import {
+  applyTheme,
+  getServerTheme,
+  getTheme,
+  setTheme,
+  subscribeTheme,
+} from "@/lib/theme";
 
 export function Sidebar() {
   const pathname = usePathname();
-  const [isDark, setIsDark] = useState(true);
+  const theme = useSyncExternalStore(subscribeTheme, getTheme, getServerTheme);
+  const isDark = theme === "dark";
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem("theme");
-    const dark = stored ? stored === "dark" : true;
-    setIsDark(dark);
-    document.documentElement.classList.toggle("dark", dark);
-  }, []);
+    applyTheme(theme);
+  }, [theme]);
 
   function toggleTheme() {
-    const next = !isDark;
-    setIsDark(next);
-    document.documentElement.classList.toggle("dark", next);
-    window.localStorage.setItem("theme", next ? "dark" : "light");
+    setTheme(isDark ? "light" : "dark");
   }
 
   function handleLogout() {
