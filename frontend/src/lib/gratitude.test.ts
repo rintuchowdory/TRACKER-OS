@@ -75,13 +75,13 @@ describe("loadJournal", () => {
     expect(result).toEqual({ ok: true, data: { entries: [], items: ["", "", ""] } });
   });
 
-  it("reports the status for a failed response", async () => {
+  it("reports the status and the server's detail for a failed response", async () => {
     list.mockRejectedValue(new ApiError(500, "boom"));
     today.mockResolvedValue(null);
 
     await expect(loadJournal()).resolves.toEqual({
       ok: false,
-      error: "Couldn't load journal (500). Is the backend running?",
+      error: "Couldn't load journal (500): boom",
     });
   });
 
@@ -109,7 +109,7 @@ describe("saveToday", () => {
 
     await expect(saveToday(["a", "b", "c"])).resolves.toEqual({
       ok: false,
-      error: "Save failed (422).",
+      error: "Save failed (422): invalid",
     });
   });
 

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ApiError, api } from "./api";
+import { ApiError, NetworkError, api, apiErrorMessage } from "./api";
 
 type FetchMock = ReturnType<typeof vi.fn>;
 
@@ -104,9 +104,10 @@ describe("error handling", () => {
     fetchMock.mockResolvedValue(errorResponse(400, "bad items"));
 
     await expect(api.gratitude.list()).rejects.toMatchObject({
-      name: "Error",
+      name: "ApiError",
       status: 400,
       message: "bad items",
+      body: "bad items",
     });
     await expect(api.gratitude.list()).rejects.toBeInstanceOf(ApiError);
   });
@@ -129,10 +130,70 @@ describe("error handling", () => {
     await expect(api.gratitude.list()).rejects.toThrowError("Request failed (503)");
   });
 
-  it("propagates network failures untouched", async () => {
-    fetchMock.mockRejectedValue(new TypeError("network down"));
+  it("uses the FastAPI detail field as the message when the body is JSON", async () => {
+    fetchMock.mockResolvedValue(
+      errorResponse(503, JSON.stringify({ detail: "Database unavailable, please retry." }))
+    );
 
-    await expect(api.gratitude.list()).rejects.toThrowError("network down");
+    await expect(api.gratitude.list()).rejects.toThrowError(
+      "Database unavailable, please retry."
+    );
+  });
+
+  it("wraps network failures in a NetworkError that keeps the cause", async () => {
+    const cause = new TypeError("network down");
+    fetchMock.mockRejectedValue(cause);
+
+    const rejection = api.gratitude.list();
+    await expect(rejection).rejects.toBeInstanceOf(NetworkError);
+    await expect(rejection).rejects.toMatchObject({ cause });
+  });
+
+  it("wraps a malformed success body in a NetworkError", async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => {
+        throw new SyntaxError("Unexpected token");
+      },
+      text: async () => "<html>",
+    });
+
+    await expect(api.gratitude.list()).rejects.toBeInstanceOf(NetworkError);
+  });
+
+  it("arms an abort signal so a hanging request cannot wait forever", async () => {
+    fetchMock.mockResolvedValue(jsonResponse([entry]));
+
+    await api.gratitude.list();
+
+    const signal: AbortSignal = fetchMock.mock.calls[0][1].signal;
+    expect(signal).toBeInstanceOf(AbortSignal);
+    expect(signal.aborted).toBe(false);
+  });
+
+  it("reports an aborted request as a timeout", async () => {
+    fetchMock.mockRejectedValue(new DOMException("aborted", "TimeoutError"));
+
+    await expect(api.gratitude.list()).rejects.toThrowError(/timed out after 15000ms/);
+  });
+});
+
+describe("apiErrorMessage", () => {
+  it("passes the status and detail through for HTTP failures", () => {
+    const message = apiErrorMessage(
+      new ApiError(409, "conflict"),
+      (status, detail) => `failed (${status}): ${detail}`,
+      "unreachable"
+    );
+
+    expect(message).toBe("failed (409): conflict");
+  });
+
+  it("reports anything else as unreachable", () => {
+    expect(apiErrorMessage(new NetworkError("down"), () => "http", "unreachable")).toBe(
+      "unreachable"
+    );
   });
 });
 

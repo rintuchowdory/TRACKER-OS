@@ -73,7 +73,7 @@ describe("initial load", () => {
     render(<GratitudePage />);
 
     expect(
-      await screen.findByText("Couldn't load journal (503). Is the backend running?")
+      await screen.findByText("Couldn't load journal (503): down")
     ).toBeInTheDocument();
   });
 });
@@ -121,7 +121,7 @@ describe("saving", () => {
 
     fireEvent.click(saveButton());
 
-    expect(await screen.findByText("Save failed (500).")).toBeInTheDocument();
+    expect(await screen.findByText("Save failed (500): nope")).toBeInTheDocument();
     expect(screen.queryByText(/Saved today/)).not.toBeInTheDocument();
     expect(saveButton()).toBeEnabled();
   });

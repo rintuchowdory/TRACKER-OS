@@ -3,6 +3,8 @@ import importlib
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.testclient import TestClient
 from sqlalchemy import inspect
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import Session
 
 from app import main
 from app.database import Base, engine
@@ -15,7 +17,29 @@ def cors_middleware(app):
 def test_health_returns_ok(client):
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    assert response.json() == {"status": "ok", "database": "ok"}
+
+
+def test_health_reports_an_unreachable_database(client, monkeypatch):
+    def explode(*args, **kwargs):
+        raise OperationalError("SELECT 1", {}, Exception("no connection"))
+
+    monkeypatch.setattr(main.engine, "connect", explode)
+
+    response = client.get("/health")
+    assert response.status_code == 503
+    assert response.json() == {"status": "error", "database": "unreachable"}
+
+
+def test_database_errors_are_reported_as_503(client, monkeypatch):
+    def explode(*args, **kwargs):
+        raise OperationalError("SELECT 1", {}, Exception("no connection"))
+
+    monkeypatch.setattr(Session, "scalars", explode)
+
+    response = client.get("/api/gratitude")
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Database unavailable, please retry."}
 
 
 def test_gratitude_router_is_mounted(client):

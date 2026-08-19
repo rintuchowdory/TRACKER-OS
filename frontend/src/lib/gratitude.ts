@@ -25,11 +25,12 @@ export async function loadJournal(): Promise<Result<Journal>> {
     ]);
     return { ok: true, data: { entries, items: itemsFromEntry(today) } };
   } catch (err) {
+    console.error("Failed to load gratitude journal", err);
     return {
       ok: false,
       error: apiErrorMessage(
         err,
-        (status) => `Couldn't load journal (${status}). Is the backend running?`,
+        (status, detail) => `Couldn't load journal (${status}): ${detail}`,
         "Couldn't reach the backend. Check NEXT_PUBLIC_API_URL."
       ),
     };
@@ -45,11 +46,12 @@ export async function saveToday(items: string[]): Promise<Result<GratitudeEntry>
     });
     return { ok: true, data: saved };
   } catch (err) {
+    console.error("Failed to save gratitude entry", err);
     return {
       ok: false,
       error: apiErrorMessage(
         err,
-        (status) => `Save failed (${status}).`,
+        (status, detail) => `Save failed (${status}): ${detail}`,
         "Save failed. Check your connection to the backend."
       ),
     };

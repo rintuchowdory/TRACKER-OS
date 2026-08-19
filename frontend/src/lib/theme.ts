@@ -20,7 +20,13 @@ export function subscribeTheme(listener: () => void): () => void {
 
 /** Client snapshot: the stored theme, falling back to the default. */
 export function getTheme(): Theme {
-  return window.localStorage.getItem(STORAGE_KEY) === "light" ? "light" : DEFAULT_THEME;
+  let stored: string | null = null;
+  try {
+    stored = window.localStorage.getItem(STORAGE_KEY);
+  } catch (err) {
+    console.error("Could not read the stored theme", err);
+  }
+  return stored === "light" ? "light" : DEFAULT_THEME;
 }
 
 /** Server snapshot: localStorage is unavailable while rendering on the server. */
@@ -29,7 +35,13 @@ export function getServerTheme(): Theme {
 }
 
 export function setTheme(theme: Theme) {
-  window.localStorage.setItem(STORAGE_KEY, theme);
+  try {
+    window.localStorage.setItem(STORAGE_KEY, theme);
+  } catch (err) {
+    // The preference cannot be persisted (private mode, quota); the theme
+    // still applies for this session via the in-memory subscribers.
+    console.error("Could not persist the theme preference", err);
+  }
   notify();
 }
 

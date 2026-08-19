@@ -30,6 +30,15 @@ describe("getTheme", () => {
     window.localStorage.setItem("theme", "sepia");
     expect(getTheme()).toBe("dark");
   });
+
+  it("falls back to dark when localStorage is unavailable", () => {
+    vi.spyOn(window.localStorage, "getItem").mockImplementation(() => {
+      throw new Error("access denied");
+    });
+
+    expect(getTheme()).toBe("dark");
+    vi.restoreAllMocks();
+  });
 });
 
 describe("getServerTheme", () => {
@@ -39,6 +48,20 @@ describe("getServerTheme", () => {
 });
 
 describe("setTheme", () => {
+  it("still notifies subscribers when the theme cannot be persisted", () => {
+    vi.spyOn(window.localStorage, "setItem").mockImplementation(() => {
+      throw new Error("quota exceeded");
+    });
+    const listener = vi.fn();
+    const unsubscribe = subscribeTheme(listener);
+
+    setTheme("light");
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    unsubscribe();
+    vi.restoreAllMocks();
+  });
+
   it("persists the theme and notifies subscribers", () => {
     const listener = vi.fn();
     const unsubscribe = subscribeTheme(listener);
