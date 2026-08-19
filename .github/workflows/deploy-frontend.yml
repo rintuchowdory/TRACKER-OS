@@ -15,7 +15,7 @@ jobs:
         working-directory: frontend
     env:
       NPM_CONFIG_LEGACY_PEER_DEPS: "true"
-      NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+      NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL || 'https://tracker-os.onrender.com' }}
       PAGES_PROJECT: ${{ vars.CLOUDFLARE_PAGES_PROJECT || 'rintu-tracker-os' }}
     steps:
       - uses: actions/checkout@v4

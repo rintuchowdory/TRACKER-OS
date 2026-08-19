@@ -7,7 +7,10 @@ from app.database import Base, engine
 from app.routers import gratitude
 
 DEFAULT_CORS_ORIGINS = (
-    "http://localhost:3000,https://tracker-os.pages.dev,https://rintu-tracker-os.pages.dev"
+    "http://localhost:3000,"
+    "https://tracker-os-bop-9jg.pages.dev,"
+    "https://tracker-os.pages.dev,"
+    "https://rintu-tracker-os.pages.dev"
 )
 
 docs_enabled = os.environ.get("ENABLE_DOCS", "").lower() in {"1", "true", "yes"}
