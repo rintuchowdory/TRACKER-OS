@@ -49,6 +49,8 @@ def test_default_allowed_origins(monkeypatch):
     try:
         assert reloaded.allowed_origins == [
             "http://localhost:3000",
+            "https://tracker-os-bop-9jg.pages.dev",
+            "https://tracker-os.pages.dev",
             "https://rintu-tracker-os.pages.dev",
         ]
     finally:
