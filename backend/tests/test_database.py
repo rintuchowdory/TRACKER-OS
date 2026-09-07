@@ -39,15 +39,32 @@ def test_engine_uses_database_url_from_environment(monkeypatch, tmp_path):
         importlib.reload(database)
 
 
-def test_database_url_falls_back_to_local_postgres(monkeypatch):
+def test_database_url_falls_back_to_sqlite_when_unset(monkeypatch, tmp_path):
     monkeypatch.delenv("DATABASE_URL", raising=False)
+    monkeypatch.chdir(tmp_path)
 
     reloaded = importlib.reload(database)
     try:
-        assert reloaded.DATABASE_URL == (
-            "postgresql+psycopg2://tracker:tracker@localhost:5432/tracker_os"
-        )
+        assert reloaded.DATABASE_URL == ""
+        assert reloaded.engine.url.drivername == "sqlite"
+        assert reloaded.engine.url.database.endswith("tracker_os.db")
     finally:
         monkeypatch.undo()
         importlib.reload(database)
     assert os.environ["DATABASE_URL"].startswith("sqlite")
+
+
+def test_unreachable_database_url_falls_back_to_sqlite(monkeypatch, tmp_path):
+    # A stale Postgres URL must not hang the app: connect timeout, then SQLite.
+    monkeypatch.setenv(
+        "DATABASE_URL",
+        "postgresql+psycopg2://tracker:tracker@localhost:59999/tracker_os",
+    )
+    monkeypatch.chdir(tmp_path)
+
+    reloaded = importlib.reload(database)
+    try:
+        assert reloaded.engine.url.drivername == "sqlite"
+    finally:
+        monkeypatch.undo()
+        importlib.reload(database)

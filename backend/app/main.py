@@ -1,3 +1,4 @@
+import logging
 import os
 
 from fastapi import FastAPI
@@ -5,6 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import Base, engine
 from app.routers import gratitude
+
+logger = logging.getLogger("app.main")
 
 DEFAULT_CORS_ORIGINS = (
     "http://localhost:3000,"
@@ -43,7 +46,12 @@ app.add_middleware(
 
 @app.on_event("startup")
 def on_startup():
-    Base.metadata.create_all(bind=engine)
+    # Never let a broken database hang or crash the API: the engine already
+    # fell back to SQLite at import time if Postgres was unreachable.
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Startup: could not create tables: %s", exc)
 
 
 @app.get("/health")
