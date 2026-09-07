@@ -19,3 +19,4 @@ coverage/
 # General
 .DS_Store
 *.log
+*.db
