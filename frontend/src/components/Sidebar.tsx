@@ -36,7 +36,7 @@ export function Sidebar() {
     <aside className="flex h-full w-64 flex-col border-r border-surface-border bg-surface px-3 py-4">
       <div className="flex items-center gap-2 px-2 pb-4">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-sm font-bold text-accent-foreground">
-          OT
+          TO
         </div>
         <div className="leading-tight">
           <div className="text-sm font-semibold">Tracker OS</div>
